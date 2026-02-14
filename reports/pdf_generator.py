@@ -6,6 +6,7 @@ Der "Consultant" - nimmt nackte Daten und macht sie für das Management lesbar
 """
 
 import datetime
+from pathlib import Path
 from typing import List, Dict
 from fpdf import FPDF
 from colorama import Fore, Style
@@ -38,11 +39,11 @@ class PDFReportGenerator:
         """Fügt Header mit Titel, Datum und Grundinfo hinzu"""
         # Titel
         self.pdf.set_font("helvetica", "B", 18)
-        self.pdf.cell(0, 15, "Security Audit Report", new_x="LMARGIN", new_y="NEXT", align="C")
+        self.pdf.cell(0, 15, "Security Audit Report", ln=1, align="C")
         
         # Subtitel
         self.pdf.set_font("helvetica", "", 11)
-        self.pdf.cell(0, 8, self.domain.upper(), new_x="LMARGIN", new_y="NEXT", align="C")
+        self.pdf.cell(0, 8, self.domain.upper(), ln=1, align="C")
         
         # Trennlinie
         self.pdf.set_draw_color(100, 100, 100)
@@ -54,10 +55,10 @@ class PDFReportGenerator:
         self.pdf.set_text_color(64, 64, 64)
         
         datum = self.timestamp.strftime("%d.%m.%Y %H:%M:%S")
-        self.pdf.cell(0, 5, f"Generiert am: {datum}", new_x="LMARGIN", new_y="NEXT")
+        self.pdf.cell(0, 5, f"Generiert am: {datum}", ln=1)
         
-        self.pdf.cell(0, 5, f"Scan-Domain: {self.domain}", new_x="LMARGIN", new_y="NEXT")
-        self.pdf.cell(0, 5, f"Scanner: {self.company_name}", new_x="LMARGIN", new_y="NEXT")
+        self.pdf.cell(0, 5, f"Scan-Domain: {self.domain}", ln=1)
+        self.pdf.cell(0, 5, f"Scanner: {self.company_name}", ln=1)
         
         self.pdf.set_text_color(0, 0, 0)  # Zurück zu schwarz
         self.pdf.ln(5)
@@ -71,7 +72,7 @@ class PDFReportGenerator:
         
         # Titel
         self.pdf.set_font("helvetica", "B", 11)
-        self.pdf.cell(0, 6, "Sicherheits-Zusammenfassung", new_x="LMARGIN", new_y="NEXT", border=0)
+        self.pdf.cell(0, 6, "Sicherheits-Zusammenfassung", ln=1, border=0)
         
         # Box zeichnen
         y_start = self.pdf.get_y()
@@ -108,7 +109,7 @@ class PDFReportGenerator:
         """Fügt die Ergebnisse als professionelle Tabelle hinzu"""
         # Tabellen-Titel
         self.pdf.set_font("helvetica", "B", 11)
-        self.pdf.cell(0, 8, "Detaillierte Audit-Ergebnisse", new_x="LMARGIN", new_y="NEXT")
+        self.pdf.cell(0, 8, "Detaillierte Audit-Ergebnisse", ln=1)
         
         # Spaltenmasse
         col_widths = [50, 85, 25]
@@ -118,9 +119,9 @@ class PDFReportGenerator:
         self.pdf.set_draw_color(50, 50, 50)
         self.pdf.set_fill_color(220, 220, 220)
         
-        self.pdf.cell(col_widths[0], 8, "Pruefung", border=1, fill=True)
+        self.pdf.cell(col_widths[0], 8, "Prüfung", border=1, fill=True)
         self.pdf.cell(col_widths[1], 8, "Beschreibung", border=1, fill=True)
-        self.pdf.cell(col_widths[2], 8, "Status", border=1, fill=True, new_x="LMARGIN", new_y="NEXT")
+        self.pdf.cell(col_widths[2], 8, "Status", border=1, fill=True, ln=1)
         
         # Tabellen-Inhalt
         self.pdf.set_font("helvetica", "", 8)
@@ -150,8 +151,7 @@ class PDFReportGenerator:
                 self.pdf.set_text_color(200, 0, 0)
                 status_text = "FAIL"
             
-            self.pdf.cell(col_widths[2], 10, status_text, border=1, fill=True, 
-                         new_x="LMARGIN", new_y="NEXT", align="C")
+            self.pdf.cell(col_widths[2], 10, status_text, border=1, fill=True, ln=1, align="C")
             self.pdf.set_text_color(0, 0, 0)  # Zurück zu schwarz
     
     def _add_details_section(self, results: List[Dict]):
@@ -162,14 +162,14 @@ class PDFReportGenerator:
             self.pdf.ln(5)
             self.pdf.set_font("helvetica", "B", 10)
             self.pdf.set_text_color(0, 150, 0)
-            self.pdf.cell(0, 8, "Alle Sicherheitschecks bestanden!", new_x="LMARGIN", new_y="NEXT")
+            self.pdf.cell(0, 8, "Alle Sicherheitschecks bestanden!", ln=1)
             self.pdf.set_text_color(0, 0, 0)
             return
         
         # Fehlerhafte Checks Detail
         self.pdf.ln(8)
         self.pdf.set_font("helvetica", "B", 11)
-        self.pdf.cell(0, 8, "Empfehlungen für fehlgeschlagene Checks", new_x="LMARGIN", new_y="NEXT")
+        self.pdf.cell(0, 8, "Empfehlungen für fehlgeschlagene Checks", ln=1)
         
         self.pdf.set_font("helvetica", "", 9)
         
@@ -177,19 +177,19 @@ class PDFReportGenerator:
             # Überschrift des Fehlers
             self.pdf.set_text_color(200, 0, 0)
             self.pdf.set_font("helvetica", "B", 9)
-            self.pdf.cell(0, 6, f"[FAIL] {result['check']}", new_x="LMARGIN", new_y="NEXT")
+            self.pdf.cell(0, 6, f"[FAIL] {result['check']}", ln=1)
             
             # Details
             self.pdf.set_text_color(0, 0, 0)
             self.pdf.set_font("helvetica", "", 8)
             self.pdf.cell(10, 5, "")  # Einrückung
-            self.pdf.cell(170, 5, f"Problem: {result['message']}", new_x="LMARGIN", new_y="NEXT")
+            self.pdf.cell(170, 5, f"Problem: {result['message']}", ln=1)
             
             self.pdf.cell(10, 5, "")  # Einrückung
             details_text = result.get('details', 'Keine weiteren Details verfügbar')
             if len(details_text) > 100:
                 details_text = details_text[:97] + "..."
-            self.pdf.cell(170, 5, f"Details: {details_text}", new_x="LMARGIN", new_y="NEXT")
+            self.pdf.cell(170, 5, f"Details: {details_text}", ln=1)
             
             self.pdf.ln(2)
     
@@ -206,10 +206,10 @@ class PDFReportGenerator:
         self.pdf.set_text_color(100, 100, 100)
         
         footer_text = f"{self.company_name} - Vertraulicher Sicherheitsbericht"
-        self.pdf.cell(0, 5, footer_text, new_x="LMARGIN", new_y="NEXT", align="C")
+        self.pdf.cell(0, 5, footer_text, ln=1, align="C")
         
         self.pdf.cell(0, 5, "Warnung: Dieses Dokument enthält sensible Sicherheitsinformationen.", 
-                     new_x="LMARGIN", new_y="NEXT", align="C")
+                 ln=1, align="C")
         
         self.pdf.set_text_color(0, 0, 0)
     
@@ -237,10 +237,15 @@ class PDFReportGenerator:
         self._add_footer()
         
         # Speichern
+        project_root = Path(__file__).resolve().parents[1]
+        audit_dir = project_root / "audit"
+        audit_dir.mkdir(parents=True, exist_ok=True)
+
         filename = f"audit_report_{self.domain.replace('.', '_')}.pdf"
-        self.pdf.output(filename)
+        file_path = audit_dir / filename
+        self.pdf.output(str(file_path))
         
-        return filename
+        return str(file_path)
     
     def generate_and_print(self, results: List[Dict]) -> str:
         """
