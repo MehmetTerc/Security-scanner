@@ -69,8 +69,17 @@ Der PDF-Report Generator ist der "Consultant":
 
 ## Installation
 
+### Lokal (venv)
+
 ```bash
 pip install -r requirements.txt
+```
+
+### Docker
+
+```bash
+docker build -t security-scanner .
+docker run --rm -it security-scanner
 ```
 
 ## Verwendung
@@ -91,6 +100,8 @@ Der Scanner wird dich dann auffordern:
 - dnspython
 - colorama
 - fpdf
+
+**Hinweis:** Die requirements.txt bleibt notwendig – sie wird sowohl für die lokale Installation als auch im Docker-Image verwendet.
 
 ## Beispiel-Output
 
