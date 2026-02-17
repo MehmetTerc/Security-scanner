@@ -11,7 +11,9 @@ Security-scanner/
 ├── modules/
 │   ├── __init__.py         # Package-Definition
 │   ├── web_scanner.py      # Website-Sicherheitschecks (5 Checks)
-│   └── dns_scanner.py      # E-Mail-Infrastruktur-Checks (3 Checks)
+│   ├── dns_scanner.py      # E-Mail-Infrastruktur-Checks (3 Checks)
+│   ├── ssl_scanner.py      # SSL-Zertifikat-Gueltigkeit (1 Check)
+│   └── leakage_scanner.py  # Information-Leakage-Checks (2 Checks)
 ├── reports/
 │   ├── __init__.py         # Package-Definition
 │   └── pdf_generator.py    # Professioneller PDF-Report Generator
@@ -39,6 +41,19 @@ Der DNS-Scanner prüft die E-Mail-Infrastruktur via öffentliche DNS-Records:
 2. **DMARC (Domain-based Message Authentication, Reporting & Conformance)**: Sagt dem Empfänger, was er mit Mails tun soll, die SPF nicht bestehen
 3. **MX Records**: Prüft auf Mail-Server-Konfiguration und Redundanz
 
+### 🔒 SSL-Scanner (`modules/ssl_scanner.py`)
+
+Der SSL-Scanner prüft die Gueltigkeit des TLS-Zertifikats:
+
+1. **SSL Gueltigkeit**: Ermittelt verbleibende Tage bis zum Ablauf
+
+### 🕵️ Leakage-Scanner (`modules/leakage_scanner.py`)
+
+Der Leakage-Scanner prueft auf Informationslecks:
+
+1. **Header Leakage**: Server- oder Framework-Header vorhanden
+2. **security.txt**: Sicherheitshinweise unter /.well-known/security.txt
+
 ### 📋 Orchestrator (`main.py`)
 
 Der Orchestrator ist der "Chef" und:
@@ -47,6 +62,8 @@ Der Orchestrator ist der "Chef" und:
 - Delegiert nacheinander an die Scanner-Module:
   - Web-Scanner (Website-Sicherheit)
   - DNS-Scanner (E-Mail-Infrastruktur)
+   - SSL-Scanner (Zertifikats-Gueltigkeit)
+   - Leakage-Scanner (Information-Leakage)
 - Sammelt die Ergebnisse
 - Generiert einen PDF-Report mit allen Findings
 
@@ -124,15 +141,28 @@ Welche Domain möchtest du scannen? (z.B. google.de): github.com
 [OK] DMARC Record: DMARC Record gefunden (reject-Policy)
 [OK] MX Records: Multiple MX Records gefunden
 
+--- SSL CERTIFICATE SCAN: github.com ---
+[OK] SSL Gültigkeit: Noch 120 Tage
+
+--- INFORMATION LEAKAGE SCAN: github.com ---
+[WARNUNG] Header Leakage: Vorhandene Header: Server
+[OK] security.txt: security.txt gefunden
+
 === ZUSAMMENFASSUNG ===
-Bestanden: 8/8
-Fehlgeschlagen: 0/8
+Bestanden: 10/11
+Fehlgeschlagen: 1/11
 
 [OK] PDF erfolgreich generiert!
-  Datei: audit_report_github_com.pdf
-  Größe: 8 Audit-Ergebnisse dokumentiert
+   Datei: audit_report_github_com.pdf
+   Größe: 11 Audit-Ergebnisse dokumentiert
 
 ✓ Scan abgeschlossen!
+```
+
+## Tests
+
+```bash
+python -m unittest
 ```
 
 ## PDF-Report Features
