@@ -18,6 +18,8 @@ from colorama import init, Fore, Style
 # Module importieren
 from modules.web_scanner import WebScanner
 from modules.dns_scanner import DNSScanner
+from modules.ssl_scanner import scan_ssl
+from modules.leakage_scanner import scan_leakage
 from reports.pdf_generator import PDFReportGenerator
 
 # Farben aktivieren
@@ -85,6 +87,40 @@ def run_dns_scanner(domain: str):
     audit_results.extend(results)
 
 
+def run_ssl_scanner(domain: str):
+    """Führt den SSL-Scanner aus und speichert Ergebnisse."""
+    results = scan_ssl(domain)
+
+    print(f"\n{Fore.CYAN}--- SSL CERTIFICATE SCAN: {domain} ---{Style.RESET_ALL}")
+    for result in results:
+        if result["safe"]:
+            status = f"[{Fore.GREEN}OK{Style.RESET_ALL}]"
+        else:
+            status = f"[{Fore.RED}WARNUNG{Style.RESET_ALL}]"
+        print(f"{status} {result['check']}: {result['message']}")
+
+    # Speichere Ergebnisse global
+    global audit_results
+    audit_results.extend(results)
+
+
+def run_leakage_scanner(domain: str):
+    """Führt den Leakage-Scanner aus und speichert Ergebnisse."""
+    results = scan_leakage(domain)
+
+    print(f"\n{Fore.CYAN}--- INFORMATION LEAKAGE SCAN: {domain} ---{Style.RESET_ALL}")
+    for result in results:
+        if result["safe"]:
+            status = f"[{Fore.GREEN}OK{Style.RESET_ALL}]"
+        else:
+            status = f"[{Fore.RED}WARNUNG{Style.RESET_ALL}]"
+        print(f"{status} {result['check']}: {result['message']}")
+
+    # Speichere Ergebnisse global
+    global audit_results
+    audit_results.extend(results)
+
+
 def generate_pdf_report(domain: str):
     """Generiert einen PDF-Report mittels Report-Generator."""
     print(f"\n{Fore.CYAN}Erstelle PDF-Report...{Style.RESET_ALL}")
@@ -146,6 +182,18 @@ def main():
         run_dns_scanner(domain)
     except Exception as e:
         print(f"{Fore.RED}Fehler bei DNS-Scanner: {str(e)}{Style.RESET_ALL}")
+
+    # SSL-Scanner aufrufen
+    try:
+        run_ssl_scanner(domain)
+    except Exception as e:
+        print(f"{Fore.RED}Fehler bei SSL-Scanner: {str(e)}{Style.RESET_ALL}")
+
+    # Leakage-Scanner aufrufen
+    try:
+        run_leakage_scanner(domain)
+    except Exception as e:
+        print(f"{Fore.RED}Fehler bei Leakage-Scanner: {str(e)}{Style.RESET_ALL}")
     
     # Schritt 4: Zusammenfassung anzeigen
     display_summary()
