@@ -14,6 +14,7 @@ Security-scanner/
 │   ├── dns_scanner.py      # E-Mail-Infrastruktur-Checks (3 Checks)
 │   ├── ssl_scanner.py      # SSL-Zertifikat-Gueltigkeit (1 Check)
 │   └── leakage_scanner.py  # Information-Leakage-Checks (2 Checks)
+│   └── email_sender.py     # Versand des PDF-Reports per E-Mail
 ├── reports/
 │   ├── __init__.py         # Package-Definition
 │   └── pdf_generator.py    # Professioneller PDF-Report Generator
@@ -66,6 +67,7 @@ Der Orchestrator ist der "Chef" und:
    - Leakage-Scanner (Information-Leakage)
 - Sammelt die Ergebnisse
 - Generiert einen PDF-Report mit allen Findings
+- Optionaler Versand des PDF-Reports per E-Mail
 
 ### 📊 Report Generator (`reports/pdf_generator.py`)
 
@@ -109,6 +111,17 @@ Der Scanner wird dich dann auffordern:
 1. Domain eingeben (z.B. `google.de`)
 2. Rechtliche Bestätigung akzeptieren
 3. Einen PDF-Report wird generiert
+4. Optional: PDF-Report per E-Mail senden
+
+## E-Mail-Versand (SMTP)
+
+Der E-Mail-Versand liest die Zugangsdaten aus einer lokalen .env-Datei (wird nicht ins Repo gepusht).
+
+Beispiel [.env](.env):
+- SMTP_SERVER=mail.gmx.net
+- SMTP_PORT=587
+- SMTP_SENDER=deine@gmx.de
+- SMTP_PASSWORD=deinpasswort
 
 ## Requirements
 
@@ -117,6 +130,7 @@ Der Scanner wird dich dann auffordern:
 - dnspython
 - colorama
 - fpdf
+- python-dotenv
 
 **Hinweis:** Die requirements.txt bleibt notwendig – sie wird sowohl für die lokale Installation als auch im Docker-Image verwendet.
 
