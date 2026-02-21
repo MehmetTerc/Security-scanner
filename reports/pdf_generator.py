@@ -32,11 +32,178 @@ class PDFReportGenerator:
     def _create_pdf(self):
         """Erstellt ein neues PDF-Dokument mit Standard-Setup"""
         self.pdf = FPDF()
-        self.pdf.add_page()
         self.pdf.set_auto_page_break(auto=True, margin=15)
+    
+    def _calculate_security_score(self, results: List[Dict]) -> float:
+        """Berechnet den Security Score basierend auf den Ergebnissen"""
+        if not results:
+            return 0
+        passed = sum(1 for r in results if r["safe"])
+        total = len(results)
+        return (passed / total * 100) if total > 0 else 0
+    
+    def _add_management_summary_page(self, results: List[Dict]):
+        """Fügt die Management Summary Seite hinzu (erste Seite des Reports)"""
+        self.pdf.add_page()
+        
+        # Berechne Security Score
+        score = self._calculate_security_score(results)
+        
+        # Bestimme Farbe basierend auf Score
+        if score > 80:
+            color = (0, 180, 0)  # Grün
+            status_text = "GUT"
+        elif score >= 50:
+            color = (255, 200, 0)  # Gelb
+            status_text = "MITTEL"
+        else:
+            color = (220, 0, 0)  # Rot
+            status_text = "KRITISCH"
+        
+        # Titel der Seite
+        self.pdf.set_font("helvetica", "B", 24)
+        self.pdf.cell(0, 20, "Management Summary", ln=1, align="C")
+        self.pdf.ln(5)
+        
+        # Großes farbiges Feld mit Security Score
+        score_box_height = 50
+        score_box_y = self.pdf.get_y()
+        
+        # Zeichne farbige Box
+        self.pdf.set_fill_color(*color)
+        self.pdf.rect(30, score_box_y, 150, score_box_height, 'F')
+        
+        # Security Score Text (groß und weiß)
+        self.pdf.set_xy(30, score_box_y + 10)
+        self.pdf.set_text_color(255, 255, 255)
+        self.pdf.set_font("helvetica", "B", 36)
+        self.pdf.cell(150, 15, f"Security Score: {score:.0f}%", align="C")
+        
+        # Status Text
+        self.pdf.set_xy(30, score_box_y + 30)
+        self.pdf.set_font("helvetica", "B", 20)
+        self.pdf.cell(150, 12, status_text, align="C")
+        
+        # Zurück zu schwarzer Schrift
+        self.pdf.set_text_color(0, 0, 0)
+        self.pdf.set_y(score_box_y + score_box_height + 15)
+        
+        # CEO Text
+        self.pdf.set_font("helvetica", "", 11)
+        ceo_text = ("Dieser automatisierte Kurz-Check zeigt die Sichtbarkeit Ihres "
+                   "Unternehmens für potenzielle Angreifer von außen.")
+        self.pdf.multi_cell(0, 6, ceo_text, align="C")
+        self.pdf.ln(10)
+        
+        # Tabelle mit Infrastruktur-Bereichen
+        self.pdf.set_font("helvetica", "B", 12)
+        self.pdf.cell(0, 8, "Übersicht der geprüften Bereiche", ln=1, align="L")
+        self.pdf.ln(3)
+        
+        # Tabellen-Header
+        col_widths = [70, 60, 50]
+        self.pdf.set_font("helvetica", "B", 10)
+        self.pdf.set_fill_color(220, 220, 220)
+        self.pdf.set_draw_color(100, 100, 100)
+        
+        self.pdf.cell(col_widths[0], 10, "Infrastruktur-Bereich", border=1, fill=True)
+        self.pdf.cell(col_widths[1], 10, "Status", border=1, fill=True)
+        self.pdf.cell(col_widths[2], 10, "Risiko", border=1, fill=True, ln=1)
+        
+        # Kategorisiere Ergebnisse
+        categories = {
+            "SSL/TLS": [],
+            "Web-Security": [],
+            "DNS-Konfiguration": [],
+            "Informationslecks": []
+        }
+        
+        for result in results:
+            check_lower = result["check"].lower()
+            if "ssl" in check_lower or "tls" in check_lower or "certificate" in check_lower:
+                categories["SSL/TLS"].append(result)
+            elif "dns" in check_lower or "spf" in check_lower or "dmarc" in check_lower:
+                categories["DNS-Konfiguration"].append(result)
+            elif "leak" in check_lower or "exposure" in check_lower or "disclosure" in check_lower:
+                categories["Informationslecks"].append(result)
+            else:
+                categories["Web-Security"].append(result)
+        
+        # Tabellen-Zeilen
+        self.pdf.set_font("helvetica", "", 9)
+        
+        for category_name, category_results in categories.items():
+            if not category_results:
+                continue
+            
+            # Berechne Status für diese Kategorie
+            cat_passed = sum(1 for r in category_results if r["safe"])
+            cat_total = len(category_results)
+            cat_score = (cat_passed / cat_total * 100) if cat_total > 0 else 0
+            
+            # Status Text und Farbe
+            if cat_score > 80:
+                status_str = f"OK ({cat_passed}/{cat_total})"
+                status_color = (0, 150, 0)
+                risk_str = "Niedrig"
+                risk_color = (0, 150, 0)
+            elif cat_score >= 50:
+                status_str = f"Warnung ({cat_passed}/{cat_total})"
+                status_color = (200, 150, 0)
+                risk_str = "Mittel"
+                risk_color = (200, 150, 0)
+            else:
+                status_str = f"Kritisch ({cat_passed}/{cat_total})"
+                status_color = (200, 0, 0)
+                risk_str = "Hoch"
+                risk_color = (200, 0, 0)
+            
+            # Kategorie Name
+            self.pdf.cell(col_widths[0], 10, category_name, border=1)
+            
+            # Status (farbig)
+            self.pdf.set_text_color(*status_color)
+            self.pdf.cell(col_widths[1], 10, status_str, border=1, align="C")
+            
+            # Risiko (farbig)
+            self.pdf.set_text_color(*risk_color)
+            self.pdf.cell(col_widths[2], 10, risk_str, border=1, align="C", ln=1)
+            
+            # Zurück zu schwarz
+            self.pdf.set_text_color(0, 0, 0)
+        
+        # Kontaktdaten am Ende der Seite
+        self.pdf.ln(15)
+        self.pdf.set_font("helvetica", "B", 11)
+        self.pdf.cell(0, 8, "Für eine tiefergehende Sicherheitsberatung:", ln=1)
+        
+        self.pdf.set_font("helvetica", "", 10)
+        self.pdf.ln(3)
+        
+        # Kontaktdaten Box
+        contact_y = self.pdf.get_y()
+        self.pdf.set_fill_color(240, 240, 240)
+        self.pdf.rect(15, contact_y, 180, 35, 'F')
+        
+        self.pdf.set_xy(20, contact_y + 5)
+        self.pdf.set_font("helvetica", "B", 11)
+        self.pdf.cell(0, 6, "Ihre Sicherheitsexperten", ln=1)
+        
+        self.pdf.set_x(20)
+        self.pdf.set_font("helvetica", "", 9)
+        self.pdf.cell(0, 5, "E-Mail: security@ihreberatung.de", ln=1)
+        
+        self.pdf.set_x(20)
+        self.pdf.cell(0, 5, "Telefon: +49 (0) 123 456789", ln=1)
+        
+        self.pdf.set_x(20)
+        self.pdf.cell(0, 5, "Web: www.ihreberatung.de", ln=1)
     
     def _add_header(self):
         """Fügt Header mit Titel, Datum und Grundinfo hinzu"""
+        # Neue Seite für Details
+        self.pdf.add_page()
+        
         # Titel
         self.pdf.set_font("helvetica", "B", 18)
         self.pdf.cell(0, 15, "Security Audit Report", ln=1, align="C")
@@ -229,7 +396,10 @@ class PDFReportGenerator:
         # PDF erstellen
         self._create_pdf()
         
-        # Komponenten hinzufügen
+        # Management Summary als erste Seite
+        self._add_management_summary_page(results)
+        
+        # Detaillierte Komponenten hinzufügen (auf neuer Seite)
         self._add_header()
         self._add_summary(results)
         self._add_results_table(results)
