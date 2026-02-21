@@ -13,6 +13,7 @@ Version: 1.0
 """
 
 import sys
+import os
 from colorama import init, Fore, Style
 
 # Module importieren
@@ -38,8 +39,36 @@ def display_welcome():
 
 
 def ask_for_domain() -> str:
-    """Fragt den User nach der zu scannenden Domain."""
+    """
+    Fragt den User nach der zu scannenden Domain.
+    Priorität:
+    1. Kommandozeilenargument: python main.py google.de
+    2. Umgebungsvariable: DOMAIN=google.de python main.py
+    3. User-Input (interaktiv)
+    """
+    # Versuch 1: Kommandozeilenargument
+    if len(sys.argv) > 1:
+        domain = sys.argv[1].strip()
+        print(f"{Fore.GREEN}Domain aus Argument: {domain}{Style.RESET_ALL}")
+        return domain
+    
+    # Versuch 2: Umgebungsvariable
+    domain_env = os.environ.get('DOMAIN', '').strip()
+    if domain_env:
+        print(f"{Fore.GREEN}Domain aus Umgebungsvariable: {domain_env}{Style.RESET_ALL}")
+        return domain_env
+    
+    # Versuch 3: Interaktiv fragen (falls möglich)
+    if not sys.stdin.isatty():
+        print(f"{Fore.RED}Fehler: Keine Domain gefunden!{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Optionen:{Style.RESET_ALL}")
+        print(f"  1. Kommandozeilenargument: docker run security-scanner google.de")
+        print(f"  2. Umgebungsvariable: docker run -e DOMAIN=google.de security-scanner")
+        print(f"  3. Interaktiv: docker run -it security-scanner")
+        sys.exit(1)
+    
     domain = input(f"Welche Domain möchtest du scannen? (z.B. google.de): ").strip()
+    
     if not domain:
         print(f"{Fore.RED}Domain darf nicht leer sein!{Style.RESET_ALL}")
         sys.exit(1)
@@ -51,6 +80,14 @@ def display_legal_warning(domain: str) -> bool:
     Zeigt einen rechtlichen Warnhinweis an und fragt nach Bestätigung.
     Returns: True wenn User zustimmt, False sonst.
     """
+    # Im non-interaktiven Modus automatisch akzeptieren
+    # (wenn gesagt wurde mit Kommandozeilenargument oder Umgebungsvariable)
+    non_interactive = len(sys.argv) > 1 or os.environ.get('DOMAIN')
+    
+    if non_interactive or not sys.stdin.isatty():
+        print(f"{Fore.YELLOW}[Non-interaktiver Modus] Rechtliche Bestätigung angenommen{Style.RESET_ALL}")
+        return True
+    
     print(f"\n{Fore.YELLOW}{'='*50}")
     print(f"  ⚠️  RECHTLICHER HINWEIS")
     print(f"{'='*50}{Style.RESET_ALL}")
@@ -207,15 +244,20 @@ def main():
         print(f"{Fore.RED}Fehler beim PDF-Export: {str(e)}{Style.RESET_ALL}")
 
     if pdf_path:
-        send_choice = input("PDF per E-Mail senden? (ja/nein): ").strip().lower()
-        if send_choice == "ja":
-            empfaenger = input("Empfänger-E-Mail: ").strip()
-            if empfaenger:
-                betreff = f"Security Scan Report für {domain}"
-                text = build_email_text(domain)
-                send_email_with_pdf(empfaenger, betreff, text, pdf_path)
-            else:
-                print(f"{Fore.YELLOW}Keine Empfängeradresse angegeben.{Style.RESET_ALL}")
+        # E-Mail-Versand nur im echten interaktiven Modus
+        if sys.stdin.isatty() and len(sys.argv) <= 1 and not os.environ.get('DOMAIN'):
+            send_choice = input("PDF per E-Mail senden? (ja/nein): ").strip().lower()
+            if send_choice == "ja":
+                empfaenger = input("Empfänger-E-Mail: ").strip()
+                if empfaenger:
+                    betreff = f"Security Scan Report für {domain}"
+                    text = build_email_text(domain)
+                    send_email_with_pdf(empfaenger, betreff, text, pdf_path)
+                else:
+                    print(f"{Fore.YELLOW}Keine Empfängeradresse angegeben.{Style.RESET_ALL}")
+        else:
+            if len(sys.argv) > 1 or os.environ.get('DOMAIN'):
+                print(f"{Fore.YELLOW}E-Mail-Versand übersprungen (Non-interaktiver Modus){Style.RESET_ALL}")
     
     print(f"\n{Fore.GREEN}✓ Scan abgeschlossen!{Style.RESET_ALL}\n")
 
