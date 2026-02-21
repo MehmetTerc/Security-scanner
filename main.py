@@ -20,6 +20,7 @@ from modules.web_scanner import WebScanner
 from modules.dns_scanner import DNSScanner
 from modules.ssl_scanner import scan_ssl
 from modules.leakage_scanner import scan_leakage
+from modules.email_sender import send_email_with_pdf, build_email_text
 from reports.pdf_generator import PDFReportGenerator
 
 # Farben aktivieren
@@ -199,10 +200,22 @@ def main():
     display_summary()
     
     # Schritt 5: PDF-Report generieren
+    pdf_path = None
     try:
-        generate_pdf_report(domain)
+        pdf_path = generate_pdf_report(domain)
     except Exception as e:
         print(f"{Fore.RED}Fehler beim PDF-Export: {str(e)}{Style.RESET_ALL}")
+
+    if pdf_path:
+        send_choice = input("PDF per E-Mail senden? (ja/nein): ").strip().lower()
+        if send_choice == "ja":
+            empfaenger = input("Empfänger-E-Mail: ").strip()
+            if empfaenger:
+                betreff = f"Security Scan Report für {domain}"
+                text = build_email_text(domain)
+                send_email_with_pdf(empfaenger, betreff, text, pdf_path)
+            else:
+                print(f"{Fore.YELLOW}Keine Empfängeradresse angegeben.{Style.RESET_ALL}")
     
     print(f"\n{Fore.GREEN}✓ Scan abgeschlossen!{Style.RESET_ALL}\n")
 
