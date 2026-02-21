@@ -2,24 +2,46 @@
 
 Eine modulare Sicherheitsscanner-Anwendung zur Überprüfung von Website-Sicherheit.
 
+## ⚖️ Wichtiger Hinweis zur Nutzung
+
+**🔴 DIESES TOOL IST AUSSCHLIESSLICH FÜR FOLGENDE ZWECKE BESTIMMT:**
+- ✅ **Authorisierte Sicherheits-Audits** (mit schriftlicher Genehmigung des Eigentümers)
+- ✅ **Educational Purposes** (Lehr- und Lernzwecke in Sicherheitsschulungen)
+- ✅ **Compliance & Pentesting** (zertifizierte Penetrationstester und Sicherheitsberater)
+- ✅ **Eigenständige Domain-Überprüfung** (Überprüfung der eigenen Infrastruktur)
+
+**❌ VERBOTEN Sind:**
+- 🚫 Scans ohne explizite Genehmigung des Domain-Eigentümers
+- 🚫 Unbefugtes Testen fremder Systeme (ist **STRAFBAR**)
+- 🚫 Verwendung für böswillige Zwecke
+- 🚫 Weitergabe an nicht-autorisierte Personen
+
+**⚠️ Haftungsausschluss:** Der Autor/die Entwickler dieses Tools sind nicht verantwortlich für Missbrauch, illegale Aktivitäten oder Schäden, die durch die Nutzung dieses Tools entstehen. Die alleinige Verantwortung liegt bei der Person, die das Tool nutzt.
+
+---
+
 ## Projektstruktur
 
 ```
 Security-scanner/
 ├── main.py                 # Orchestrator - delegiert an Module
 ├── config.py               # Konfigurationseinstellungen
+├── Dockerfile              # Docker Container Definition
+├── LICENSE                 # MIT License + Authorized Use Policy
+├── README.md               # Diese Datei (Dokumentation)
+├── requirements.txt        # Python Dependencies
 ├── modules/
 │   ├── __init__.py         # Package-Definition
 │   ├── web_scanner.py      # Website-Sicherheitschecks (5 Checks)
 │   ├── dns_scanner.py      # E-Mail-Infrastruktur-Checks (3 Checks)
 │   ├── ssl_scanner.py      # SSL-Zertifikat-Gueltigkeit (1 Check)
-│   └── leakage_scanner.py  # Information-Leakage-Checks (2 Checks)
+│   ├── leakage_scanner.py  # Information-Leakage-Checks (2 Checks)
 │   └── email_sender.py     # Versand des PDF-Reports per E-Mail
 ├── reports/
 │   ├── __init__.py         # Package-Definition
 │   └── pdf_generator.py    # Professioneller PDF-Report Generator
-├── README.md               # Diese Datei
-└── requirements.txt        # Dependencies
+└── audit/
+    └── audit_report_*.pdf  # Generierte Sicherheits-Reports
 ```
 
 ## Features
@@ -73,18 +95,40 @@ Der Orchestrator ist der "Chef" und:
 
 Der PDF-Report Generator ist der "Consultant":
 - Nimmt strukturierte Daten vom Orchestrator
-- Erstellt professionelle, farbcodierte PDF-Reports
-- Zeigt Zusammenfassung (Erfolgsrate, PASS/FAIL Statistik)
-- Tabellierte Audit-Ergebnisse (grün = bestanden, rot = fehlgeschlagen)
-- Detaillierte Fehlerliste mit Empfehlungen
+- Erstellt professionelle, mehrseiten PDF-Reports
 - Speichert als `audit_report_[domain].pdf`
 
+**Report-Struktur:**
+
+**Seite 1: Management Summary**
+- **Security Score** (prominentes Feld mit Prozentsatz)
+  - ✅ Grün (GUT): > 80%
+  - ⚠️ Gelb (MITTEL): >= 50%
+  - ❌ Rot (KRITISCH): < 50%
+- Status-Text basierend auf Score
+- Übersicht der 4 geprüften Infrastruktur-Bereiche:
+  - SSL/TLS (mit Kategorie-Score)
+  - Web-Security (mit Kategorie-Score)
+  - DNS-Konfiguration (mit Kategorie-Score)
+  - Informationslecks (mit Kategorie-Score)
+- Kontaktinformationen für Beratung
+
+**Seite 2+: Detaillierte Audit-Ergebnisse**
+- **Sicherheits-Zusammenfassung**: Bestanden / Fehlgeschlagen / Erfolgsrate (%)
+- **Audit-Ergebnisse Tabelle**: 
+  - Prüfung, Beschreibung, Status (PASS/FAIL)
+  - Farbcodierung (grün = bestanden, rot = fehlgeschlagen)
+  - Abwechselnde Zeilen-Farben für bessere Lesbarkeit
+- **Empfehlungen für Fehlschläge**: Detaillierte Beschreibung & Lösungsvorschläge
+- **Footer**: Vertraulichkeitshinweis und Scanner-Information
+
 **Features:**
+- ✅ Multi-Seiten Report mit Management Summary & Details
+- ✅ Dynamischer Security Score mit Farbcodierung
+- ✅ Kategorie-basierte Bewertung von Infrastruktur-Bereichen
+- ✅ Erfolgsrate und Statistiken
 - ✅ Professionelles Layout mit Header/Footer
-- ✅ Farbcodierung (grün/rot) für Status
-- ✅ Abwechselnde Zeilen-Farben für bessere Lesbarkeit
-- ✅ Detaillierte Informationen für jede Prüfung
-- ✅ Erfolgsrate und Statistik in Report integriert
+- ✅ Farbige Kategorisierung aller Prüfungen
 
 ## Installation
 
@@ -96,21 +140,58 @@ pip install -r requirements.txt
 
 ### Docker
 
+**Image bauen:**
 ```bash
 docker build -t security-scanner .
-docker run --rm -it security-scanner
 ```
+
+**Container starten - Optionen (in dieser Reihenfolge):**
+
+**Option 1: Mit Kommandozeilenargument (empfohlen für Automation):**
+```bash
+docker run -v ./audit:/app/audit security-scanner google.de
+```
+- Vollautomatisch, kein Input erforderlich
+- Domain wird direkt übergeben
+- Perfekt für Skripte und Cron-Jobs
+
+**Option 2: Mit Umgebungsvariable:**
+```bash
+docker run -e DOMAIN=google.de -v ./audit:/app/audit security-scanner
+```
+- Auch automatisch
+- Flexibel für Konfiguration
+
+**Option 3: Interaktiv (Domain wird abgefragt):**
+```bash
+docker run -it -v ./audit:/app/audit security-scanner
+```
+- Der Container fragt nach Domain und Bestätigung
+- Braucht `-it` Flags für interaktiven Input
+
+### Wichtig: Image nach Code-Änderungen neu bauen
+Wenn du den Code änderst, musst du das Docker Image neu bauen, damit die Änderungen wirksam werden:
+```bash
+docker build -t security-scanner .
+```
+Das `COPY . .` in der Dockerfile kopiert den Code nur **zum Build-Zeitpunkt**, nicht dynamisch!
 
 ## Verwendung
 
+### Lokal
 ```bash
 python main.py
+```
+
+### Docker
+```bash
+docker run -v ./audit:/app/audit -it security-scanner
 ```
 
 Der Scanner wird dich dann auffordern:
 1. Domain eingeben (z.B. `google.de`)
 2. Rechtliche Bestätigung akzeptieren
-3. Einen PDF-Report wird generiert
+3. Ein PDF-Report wird generiert und im `audit/` Ordner gespeichert als `audit_report_[domain].pdf`
 4. Optional: PDF-Report per E-Mail senden
 
 ## E-Mail-Versand (SMTP)
@@ -205,9 +286,49 @@ Der generierte PDF-Report enthält:
 5. **Vertraulicher Footer**
    - Warnung vor sensitiven Sicherheitsinformationen
 
-## Sicherheitshinweise
+## 📜 Lizenz
 
-⚠️ **Wichtig**: Dieser Scanner darf **nur** mit ausdrücklicher Genehmigung des Domain-Eigentümers verwendet werden. Unbefugtes Scanning von fremden Systemen ist illegal und strafbar!
+Dieses Projekt ist unter der **MIT License** lizenziert. Siehe [LICENSE](LICENSE) für Details.
+
+**Wichtig:** Die Lizenz beinhaltet ein zusätzliches **Authorized Use Only Addendum**, das explizit erklärt, dass dieses Tool nur für folgende Zwecke verwendet werden darf:
+- ✅ Autoritative Sicherheitsaudits (mit Genehmigung)
+- ✅ Educational & Learning Purposes
+- ✅ Compliance Testing
+- ✅ Authorized Penetration Testing
+
+## ⚖️ Rechtliche Warnung & Haftungsausschluss
+
+**🔴 AUTHORIZED USE ONLY**
+
+Dieser Security Scanner ist ein **passivasives Audit-Tool** für inspirierende und autorisierte Sicherheitstests. Die Nutzung unterliegt strengen rechtlichen Anforderungen:
+
+### Erlaubte Verwendung:
+- ✅ Tests **YOUR OWN DOMAIN** (der Eigentümer oder Autorisierter)
+- ✅ **Mit expliziter schriftlicher Genehmigung** des Domain-Eigentümers
+- ✅ **Educational purposes** in zertifizierten Sicherheitsschulungen
+- ✅ **Professional Penetration Testing** durch zertifizierte Sicherheitsexperten
+- ✅ **Compliance Audits** in autorisierten Rollen
+
+### Verbotene Verwendung:
+- 🚫 Scans **ohne Genehmigung** des Eigentümers → **ILLEGAL**
+- 🚫 Unbefugtes Testen fremder Systeme → **STRAFBAR**
+- 🚫 Verwendung für böswillige oder kriminelle Zwecke
+- 🚫 Weitergabe an unbefugte Personen
+
+### Haftungsausschluss:
+Die Autoren und Beiträger dieses Tools sind **NICHT verantwortlich** für:
+- Missbrauch oder illegale Nutzung
+- Strafverfolgung aufgrund von unbefugtem Zugriff
+- Schäden an Systemen oder Netzwerken
+- Datenverlust oder andere Folgen der Verwendung
+
+**Die gesamte Verantwortung liegt bei der Person, die das Tool nutzt.**
+
+---
+
+⚠️ **WICHTIG**: Unbefugtes Scanning fremder Systeme verstößt gegen Gesetze in den meisten Ländern (z.B. CFAA in den USA, StGB §303b in Deutschland) und kann zu strafrechtlicher Verfolgung führen!
+
+---
 
 ## Lizenz
 
