@@ -300,7 +300,7 @@ Dieses Projekt ist unter der **MIT License** lizenziert. Siehe [LICENSE](LICENSE
 
 **🔴 AUTHORIZED USE ONLY**
 
-Dieser Security Scanner ist ein **passivasives Audit-Tool** für inspirierende und autorisierte Sicherheitstests. Die Nutzung unterliegt strengen rechtlichen Anforderungen:
+Dieser Security Scanner ist ein **passives Audit-Tool** für inspirierende und autorisierte Sicherheitstests. Die Nutzung unterliegt strengen rechtlichen Anforderungen:
 
 ### Erlaubte Verwendung:
 - ✅ Tests **YOUR OWN DOMAIN** (der Eigentümer oder Autorisierter)
